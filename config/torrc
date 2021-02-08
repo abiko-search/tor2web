@@ -1,0 +1,13 @@
+User                    tor
+DataDirectory           /var/lib/tor
+RunAsDaemon             1
+VirtualAddrNetworkIPv4  127.192.0.0/10
+SocksPort               0
+TransPort               9040 IsolateClientAddr IsolateClientProtocol IsolateDestAddr IsolateDestPort
+AutomapHostsOnResolve   1
+DNSPort                 53
+ClientOnly              1
+NewCircuitPeriod        15
+MaxCircuitDirtiness     15
+UseEntryGuards          1
+NumEntryGuards          8

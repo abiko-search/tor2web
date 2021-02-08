@@ -1,0 +1,116 @@
+daemon off;
+worker_processes auto;
+pcre_jit on;
+
+pid /var/run/nginx.pid;
+
+events {
+  worker_connections 1024;
+}
+
+error_log /dev/stdout notice;
+
+http {
+  resolver 127.0.0.1 ipv6=off;
+
+  sendfile on;
+  access_log off;
+  server_tokens off;
+
+  client_max_body_size 10m;
+  lua_shared_dict blacklist 16k;
+
+  init_by_lua_block {
+    for line in io.open('/etc/tor2web/blacklist.txt'):lines() do
+      local pubkey = line:match('(%w+)%.onion')
+      if pubkey then
+        ngx.shared.blacklist:set(pubkey, true)
+      end
+    end
+  }
+
+  server {
+    listen ${PORT};
+
+    server_name '~^(?<pubkey>[0-9a-z]{16}|[0-9a-z]{56})\.${TOR2WEB_HOST_PATTERN}$';
+
+    location / {
+      proxy_buffers 16 4k;
+      proxy_buffer_size 2k;
+      proxy_pass http://$pubkey.onion;
+      proxy_set_header Accept-Encoding '';
+      proxy_redirect '~^(https?://([0-9a-z]{16}|[0-9a-z]{56}))\.onion(.*)$' $1.${TOR2WEB_HOST}$3;
+
+      access_by_lua_block {
+        if ngx.shared.blacklist:get(ngx.var.pubkey) then
+          ngx.exit(ngx.HTTP_ILLEGAL)
+        end
+      }
+
+      header_filter_by_lua_block {
+        if ngx.header.content_type and ngx.header.content_type:find('text/html') ~= 1 then
+          return
+        end
+
+        ngx.header.content_length = nil
+
+        local lolhtml = require 'lolhtml'
+
+        local function rewrite_url_in_attr(el, attr)
+          local val = el:get_attribute(attr):gsub('(//%w+)%.onion', '%1.${TOR2WEB_HOST}')
+          el:set_attribute(attr, val)
+        end
+
+        ngx.ctx.rewriter = lolhtml.new_rewriter {
+          builder = lolhtml.new_rewriter_builder()
+            :add_element_content_handlers {
+              selector = lolhtml.new_selector('a[href], link[rel=stylesheet][href], base[href]'),
+              element_handler = function(el) rewrite_url_in_attr(el, 'href') end,
+            }
+            :add_element_content_handlers {
+              selector = lolhtml.new_selector(
+                'script[src], iframe[src], img[src], audio[src], video[src]'
+              ),
+              element_handler = function(el) rewrite_url_in_attr(el, 'src') end,
+            }
+            :add_element_content_handlers {
+              selector = lolhtml.new_selector('form[action]'),
+              element_handler = function(el) rewrite_url_in_attr(el, 'action') end,
+            }
+            :add_element_content_handlers {
+              selector = lolhtml.new_selector('button[formaction]'),
+              element_handler = function(el) rewrite_url_in_attr(el, 'formaction') end,
+            }
+            :add_element_content_handlers {
+              selector = lolhtml.new_selector('body'),
+              element_handler = function(el)
+                el:prepend([[${TOR2WEB_DISCLAIMER}]], true)
+              end
+            },
+
+          sink = function(str)
+            ngx.ctx.buffer = ngx.ctx.buffer .. str
+          end
+        }
+      }
+
+      body_filter_by_lua_block {
+        if not ngx.ctx.rewriter then return end
+
+        ngx.ctx.buffer = ''
+        
+        ngx.ctx.rewriter:write(ngx.arg[1])
+
+        if ngx.arg[2] then
+          ngx.ctx.rewriter:close()
+        end
+
+        ngx.arg[1] = ngx.ctx.buffer
+      }
+    }
+
+    location /robots.txt {
+      root /var/www/html;
+    }
+  }
+}
