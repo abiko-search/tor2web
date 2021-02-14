@@ -32,14 +32,14 @@ http {
   server {
     listen ${PORT};
 
-    server_name '~^(?<pubkey>[0-9a-z]{16}|[0-9a-z]{56})\.${TOR2WEB_HOST_PATTERN}$';
+    server_name '~^(?<pubkey>[2-7a-z]{16}|[2-7a-z]{56})\.${TOR2WEB_HOST_PATTERN}$';
 
     location / {
       proxy_buffers 16 4k;
       proxy_buffer_size 2k;
       proxy_pass http://$pubkey.onion;
       proxy_set_header Accept-Encoding '';
-      proxy_redirect '~^(https?://([0-9a-z]{16}|[0-9a-z]{56}))\.onion(.*)$' $1.${TOR2WEB_HOST}$3;
+      proxy_redirect '~^(https?://([2-7a-z]{16}|[2-7a-z]{56}))\.onion(.*)$' $1.${TOR2WEB_HOST}$3;
 
       access_by_lua_block {
         if ngx.shared.blacklist:get(ngx.var.pubkey) then
