@@ -18,7 +18,7 @@ docker run -d --name=tor2web \
               --cap-add=NET_ADMIN \
               -p 80:80 \
               -e TOR2WEB_HOST=abiko.me \
-              -v blacklist.txt:/etc/tor2web/blacktist.txt:ro \
+              -v $PWD:/etc/tor2web:ro \
               abikome/tor2web
 ```
 
