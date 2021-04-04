@@ -18,13 +18,13 @@ http {
   server_tokens off;
 
   client_max_body_size 10m;
-  lua_shared_dict blacklist 16k;
+  lua_shared_dict blacklist 4m;
 
   init_by_lua_block {
     for line in io.open('/etc/tor2web/blacklist.txt'):lines() do
-      local pubkey = line:match('(%w+)%.onion')
-      if pubkey then
-        ngx.shared.blacklist:set(pubkey, true)
+      local hash = ngx.re.match(line, '[a-f0-9]{32}')
+      if hash then
+        ngx.shared.blacklist:set(hash[0], true)
       end
     end
   }
@@ -43,7 +43,7 @@ http {
       proxy_redirect '~^(https?://([0-9a-z.-]+\.)?([2-7a-z]{16}|[2-7a-z]{56}))\.onion(.*)$' $1.${TOR2WEB_HOST}$4;
 
       access_by_lua_block {
-        if ngx.shared.blacklist:get(ngx.var.pubkey) then
+        if ngx.shared.blacklist:get(ngx.md5(ngx.var.pubkey .. '.onion')) then
           ngx.exit(ngx.HTTP_ILLEGAL)
         end
       }
@@ -58,7 +58,11 @@ http {
         local lolhtml = require 'lolhtml'
 
         local function rewrite_url_in_attr(el, attr)
-          local val = el:get_attribute(attr):gsub('(//[%w.-]+)%.onion', '%1.${TOR2WEB_HOST}')
+          local val = ngx.re.gsub(
+            el:get_attribute(attr),
+            '//([0-9a-z.-]+\\.)?([2-7a-z]{16}|[2-7a-z]{56})\\.onion',
+            '//$1$2.${TOR2WEB_HOST}'
+          )
           el:set_attribute(attr, val)
         end
 
