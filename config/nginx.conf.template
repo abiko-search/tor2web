@@ -42,6 +42,10 @@ http {
       proxy_set_header Host $subdomain$pubkey.onion;
       proxy_set_header Accept-Encoding 'gzip, deflate';
       proxy_redirect '~^(https?://([0-9a-z.-]+\.)?([2-7a-z]{16}|[2-7a-z]{56}))\.onion(.*)$' $1.${TOR2WEB_HOST}$4;
+      proxy_intercept_errors on;
+      error_page 451 /451.html;
+      error_page 500 502 503 504 /50x.html;
+
       gzip on;
       gzip_proxied any;
       gzip_types text/plain text/html text/css text/javascript text/xml application/json application/xml;
@@ -132,6 +136,14 @@ http {
           ngx.ctx.compress(ngx.ctx.buffer, ngx.arg[2] and 'finish') or
           ngx.ctx.buffer
       }
+    }
+
+    location = /50x.html {
+      root /etc/tor2web/errors;
+    }
+
+    location = /451.html {
+      root /etc/tor2web/errors;
     }
 
     location /robots.txt {

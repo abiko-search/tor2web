@@ -52,6 +52,7 @@ COPY config/nginx.conf.template nginx.conf.template
 COPY blacklist.txt /etc/tor2web/blacklist.txt
 COPY disclaimer.html /etc/tor2web/disclaimer.html
 COPY robots.txt /var/www/html/robots.txt
+COPY errors /etc/tor2web/errors
 
 CMD set -eux; \
     nft -f /etc/nftables.conf; \
