@@ -8,6 +8,7 @@ An HTTP proxy that enables access to Tor Hidden Services
 
 * Blazing fast streaming HTML parser
 * Accurate link replacement
+* Compression support
 * Low footprint — less than 16 MiB Docker image
 * Simple and maintainable
 

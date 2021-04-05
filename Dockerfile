@@ -33,8 +33,11 @@ RUN set -eux; \
       rust \
       cargo \
       outils-md5 \
-      luajit-dev; \
-    luarocks install https://raw.githubusercontent.com/jdesgats/lua-lolhtml/master/rockspecs/lolhtml-dev-2.rockspec; \
+      luajit-dev \
+      zlib-dev; \
+    luarocks install \
+      https://raw.githubusercontent.com/jdesgats/lua-lolhtml/master/rockspecs/lolhtml-dev-2.rockspec; \
+    luarocks install lua-zlib; \
     apk del --no-network .build-deps; \
     rm -rf /root/.cache /root/.cargo /root/.wget-hsts
 

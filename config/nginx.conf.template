@@ -35,12 +35,16 @@ http {
     server_name '~^(?<subdomain>[0-9a-z.-]+\.)?(?<pubkey>[2-7a-z]{16}|[2-7a-z]{56})\.${TOR2WEB_HOST_PATTERN}$';
 
     location / {
+      proxy_http_version 1.1;
       proxy_buffers 16 4k;
       proxy_buffer_size 2k;
       proxy_pass http://$pubkey.onion;
       proxy_set_header Host $subdomain$pubkey.onion;
-      proxy_set_header Accept-Encoding '';
+      proxy_set_header Accept-Encoding 'gzip, deflate';
       proxy_redirect '~^(https?://([0-9a-z.-]+\.)?([2-7a-z]{16}|[2-7a-z]{56}))\.onion(.*)$' $1.${TOR2WEB_HOST}$4;
+      gzip on;
+      gzip_proxied any;
+      gzip_types text/plain text/html text/css text/javascript text/xml application/json application/xml;
 
       access_by_lua_block {
         if ngx.shared.blacklist:get(ngx.md5(ngx.var.pubkey .. '.onion')) then
@@ -49,8 +53,17 @@ http {
       }
 
       header_filter_by_lua_block {
+        local zlib = require 'zlib'
+
         if ngx.header.content_type and ngx.header.content_type:find('text/html') ~= 1 then
           return
+        end
+
+        if ngx.header.content_encoding == 'gzip' or
+            ngx.header.content_encoding == 'deflate' then
+          ngx.header.content_encoding = 'deflate'
+          ngx.ctx.decompress = zlib.inflate()
+          ngx.ctx.compress = zlib.deflate()
         end
 
         ngx.header.content_length = nil
@@ -103,14 +116,21 @@ http {
         if not ngx.ctx.rewriter then return end
 
         ngx.ctx.buffer = ''
-        
-        ngx.ctx.rewriter:write(ngx.arg[1])
+
+        local chunk = string.len(ngx.arg[1]) > 0 and
+          ngx.ctx.decompress and
+          ngx.ctx.decompress(ngx.arg[1]) or
+          ngx.arg[1]
+
+        ngx.ctx.rewriter:write(chunk)
 
         if ngx.arg[2] then
           ngx.ctx.rewriter:close()
         end
 
-        ngx.arg[1] = ngx.ctx.buffer
+        ngx.arg[1] = ngx.ctx.compress and
+          ngx.ctx.compress(ngx.ctx.buffer, ngx.arg[2] and 'finish') or
+          ngx.ctx.buffer
       }
     }
 
