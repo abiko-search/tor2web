@@ -2,7 +2,7 @@
 
 ![Docker Image Size](https://img.shields.io/docker/image-size/abikome/tor2web)
 
-An HTTP proxy that enables access to Tor Hidden Services
+An HTTP proxy that enables access to Tor Onion Services
 
 ## Features
 
