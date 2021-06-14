@@ -1,8 +1,8 @@
-FROM alpine:3.12
+FROM alpine:3.13
 
 RUN set -eux; \
-    echo 'http://openresty.org/package/alpine/v3.12/main' | tee -a /etc/apk/repositories; \
-    wget 'http://openresty.org/package/admin@openresty.com-5ea678a6.rsa.pub' -P /etc/apk/keys; \
+    echo 'https://openresty.org/package/alpine/v3.13/main' | tee -a /etc/apk/repositories; \
+    wget 'https://openresty.org/package/admin@openresty.com-5ea678a6.rsa.pub' -P /etc/apk/keys; \
     apk add --no-cache openresty tor nftables gettext
 
 RUN set -eux; \
@@ -11,7 +11,7 @@ RUN set -eux; \
       make \
       luajit-dev; \
     wget -O luarocks.tar.gz \
-      https://luarocks.github.io/luarocks/releases/luarocks-3.5.0.tar.gz; \
+      https://luarocks.github.io/luarocks/releases/luarocks-3.7.0.tar.gz; \
     mkdir -p /usr/src/luarocks; \
     tar xzf luarocks.tar.gz \
       --directory /usr/src/luarocks \
