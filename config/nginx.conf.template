@@ -45,6 +45,7 @@ http {
       proxy_intercept_errors on;
       error_page 451 /451.html;
       error_page 500 502 503 504 /50x.html;
+      add_header Onion-Location http://$subdomain$pubkey.onion$request_uri;
 
       gzip on;
       gzip_proxied any;
