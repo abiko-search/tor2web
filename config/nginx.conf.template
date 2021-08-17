@@ -32,7 +32,7 @@ http {
   server {
     listen ${PORT};
 
-    server_name '~^(?<subdomain>[0-9a-z.-]+\.)?(?<pubkey>[2-7a-z]{16}|[2-7a-z]{56})\.${TOR2WEB_HOST_PATTERN}$';
+    server_name '~^(?<subdomain>[0-9a-z.-]+\.)?(?<pubkey>[2-7a-z]{56})\.${TOR2WEB_HOST_PATTERN}$';
 
     location / {
       proxy_http_version 1.1;
@@ -41,7 +41,7 @@ http {
       proxy_pass http://$pubkey.onion;
       proxy_set_header Host $subdomain$pubkey.onion;
       proxy_set_header Accept-Encoding 'gzip, deflate';
-      proxy_redirect '~^(https?://([0-9a-z.-]+\.)?([2-7a-z]{16}|[2-7a-z]{56}))\.onion(.*)$' $1.${TOR2WEB_HOST}$4;
+      proxy_redirect '~^(https?://([0-9a-z.-]+\.)?([2-7a-z]{56}))\.onion(.*)$' $1.${TOR2WEB_HOST}$4;
       proxy_intercept_errors on;
       error_page 451 /451.html;
       error_page 500 502 503 504 /50x.html;
@@ -78,7 +78,7 @@ http {
         local function rewrite_url_in_attr(el, attr)
           local val = ngx.re.gsub(
             el:get_attribute(attr),
-            '//([0-9a-z.-]+\\.)?([2-7a-z]{16}|[2-7a-z]{56})\\.onion',
+            '//([0-9a-z.-]+\\.)?([2-7a-z]{56})\\.onion',
             '//$1$2.${TOR2WEB_HOST}'
           )
           el:set_attribute(attr, val)
