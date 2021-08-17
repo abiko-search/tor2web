@@ -1,4 +1,4 @@
-FROM alpine:3.13
+FROM alpine:3.14
 
 RUN set -eux; \
     echo 'https://openresty.org/package/alpine/v3.13/main' | tee -a /etc/apk/repositories; \
