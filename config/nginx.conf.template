@@ -21,6 +21,8 @@ http {
   lua_shared_dict blacklist 4m;
 
   init_by_lua_block {
+    require 'zlib'
+
     for line in io.open('/etc/tor2web/blacklist.txt'):lines() do
       local hash = ngx.re.match(line, '[a-f0-9]{32}')
       if hash then
@@ -58,8 +60,6 @@ http {
       }
 
       header_filter_by_lua_block {
-        local zlib = require 'zlib'
-
         if ngx.header.content_type and ngx.header.content_type:find('text/html') ~= 1 then
           return
         end
