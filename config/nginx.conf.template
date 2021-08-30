@@ -58,6 +58,18 @@ http {
         end
       }
 
+      rewrite_by_lua_block {
+        local hdrs = ngx.req.get_headers()
+        if hdrs['Referer'] then
+          local newRef = ngx.re.gsub(
+            hdrs['Referer'],
+            '//([0-9a-z.-]+\\.)?([2-7a-z]{56})\\.${TOR2WEB_HOST}',
+            '//$1$2.onion'
+          )
+          ngx.req.set_header("Referer", newRef)
+        end
+      }
+
       header_filter_by_lua_block {
         if not ngx.header['Onion-Location'] then
           ngx.header['Onion-Location'] =
