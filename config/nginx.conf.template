@@ -18,7 +18,7 @@ http {
   server_tokens off;
 
   client_max_body_size 10m;
-  lua_shared_dict blacklist 4m;
+  lua_shared_dict blacklist 16m;
 
   init_by_lua_block {
     require 'zlib'
